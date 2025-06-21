@@ -1,3 +1,5 @@
+# server/models.py
+
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import validates
 from flask_bcrypt import Bcrypt
@@ -33,9 +35,12 @@ class User(db.Model):
 
     @validates('username')
     def validate_username(self, key, username):
-        if not username:
+        if not username or username.strip() == "":
             raise ValueError("Username must be present.")
         return username
+
+    def __repr__(self):
+        return f"<User {self.username}>"
 
 
 class Recipe(db.Model):
@@ -49,12 +54,15 @@ class Recipe(db.Model):
 
     @validates('title')
     def validate_title(self, key, title):
-        if not title:
+        if not title or title.strip() == "":
             raise ValueError("Title must be present.")
         return title
 
     @validates('instructions')
     def validate_instructions(self, key, instructions):
-        if not instructions or len(instructions) < 50:
+        if not instructions or len(instructions.strip()) < 50:
             raise ValueError("Instructions must be at least 50 characters long.")
         return instructions
+
+    def __repr__(self):
+        return f"<Recipe {self.title}>"
