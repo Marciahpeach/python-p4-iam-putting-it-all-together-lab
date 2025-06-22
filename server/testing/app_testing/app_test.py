@@ -2,15 +2,15 @@ from faker import Faker
 from random import randint
 import pytest
 
-from server.app import app
-from models import db, User, Recipe
+from server.app import app, db
+from server.models import User, Recipe
 
 app.secret_key = b'a\xdb\xd2\x13\x93\xc1\xe9\x97\xef2\xe3\x004U\xd1Z'
 fake = Faker()
 
+
 class TestSignup:
     def test_creates_users_at_signup(self):
-        '''creates user records with usernames and passwords at /signup.'''
         with app.app_context():
             User.query.delete()
             db.session.commit()
@@ -29,7 +29,6 @@ class TestSignup:
             assert new_user.authenticate('pikachu')
 
     def test_422s_invalid_users_at_signup(self):
-        '''422s invalid usernames at /signup.'''
         with app.app_context():
             User.query.delete()
             db.session.commit()
@@ -45,7 +44,6 @@ class TestSignup:
 
 class TestCheckSession:
     def test_returns_user_json_for_active_session(self):
-        '''returns JSON for the user's data if there is an active session.'''
         with app.app_context():
             User.query.delete()
             db.session.commit()
@@ -66,7 +64,6 @@ class TestCheckSession:
             assert response.get_json()['id'] == 1
 
     def test_401s_for_no_session(self):
-        '''returns 401 Unauthorized status code if no active session.'''
         with app.test_client() as client:
             with client.session_transaction() as session:
                 session['user_id'] = None
@@ -77,7 +74,6 @@ class TestCheckSession:
 
 class TestLogin:
     def test_logs_in(self):
-        '''logs users in with username and password at /login.'''
         with app.app_context():
             User.query.delete()
             db.session.commit()
@@ -115,7 +111,6 @@ class TestLogin:
 
 class TestLogout:
     def test_logs_out(self):
-        '''logs users out at /logout.'''
         with app.app_context():
             User.query.delete()
             db.session.commit()
@@ -138,7 +133,6 @@ class TestLogout:
 
 class TestRecipeIndex:
     def test_lists_recipes_with_200(self):
-        '''returns user's recipes with a 200 status.'''
         with app.app_context():
             Recipe.query.delete()
             User.query.delete()
@@ -149,7 +143,7 @@ class TestRecipeIndex:
                 bio=fake.paragraph(),
                 image_url=fake.url()
             )
-            user.password = 'secret'
+            user.password_hash = 'secret'
             db.session.add(user)
             db.session.commit()
 
@@ -184,7 +178,6 @@ class TestRecipeIndex:
             assert response.status_code == 401
 
     def test_creates_recipes_with_201(self):
-        '''creates recipes associated with the logged-in user'''
         with app.app_context():
             Recipe.query.delete()
             User.query.delete()
@@ -195,7 +188,7 @@ class TestRecipeIndex:
                 bio=fake.paragraph(),
                 image_url=fake.url()
             )
-            user.password = 'secret'
+            user.password_hash = 'secret'
             db.session.add(user)
             db.session.commit()
 
@@ -223,7 +216,7 @@ class TestRecipeIndex:
                 bio=fake.paragraph(),
                 image_url=fake.url()
             )
-            user.password = 'secret'
+            user.password_hash = 'secret'
             db.session.add(user)
             db.session.commit()
 

@@ -1,47 +1,39 @@
-# server/models.py
-
-from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import validates
-from flask_bcrypt import Bcrypt
+from flask_sqlalchemy import SQLAlchemy
+from flask_bcrypt import generate_password_hash, check_password_hash
 
-db = SQLAlchemy()
-bcrypt = Bcrypt()
+from server.app import db, bcrypt
 
 class User(db.Model):
     __tablename__ = 'users'
 
     id = db.Column(db.Integer, primary_key=True)
-    username = db.Column(db.String, unique=True, nullable=False)
+    username = db.Column(db.String, nullable=False, unique=True)
     _password_hash = db.Column(db.String, nullable=False)
-    image_url = db.Column(db.String)
-    bio = db.Column(db.String)
+    image_url = db.Column(db.String, default="")
+    bio = db.Column(db.String, default="")
 
-    # Relationships
-    recipes = db.relationship('Recipe', backref='user', cascade='all, delete-orphan')
+    recipes = db.relationship("Recipe", backref="user", cascade="all, delete-orphan")
 
-    # Password: write-only property
     @property
-    def password(self):
-        raise AttributeError("Password is write-only.")
+    def password_hash(self):
+        raise AttributeError("Password hashes may not be viewed.")
 
-    @password.setter
-    def password(self, password):
-        if not password or len(password) < 6:
-            raise ValueError("Password must be at least 6 characters long.")
+    @password_hash.setter
+    def password_hash(self, password):
         self._password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
 
     def authenticate(self, password):
         return bcrypt.check_password_hash(self._password_hash, password)
 
-    @validates('username')
-    def validate_username(self, key, username):
-        if not username or username.strip() == "":
+    @validates("username")
+    def validate_username(self, key, value):
+        if not value or value.strip() == "":
             raise ValueError("Username must be present.")
-        return username
+        return value
 
     def __repr__(self):
         return f"<User {self.username}>"
-
 
 class Recipe(db.Model):
     __tablename__ = 'recipes'
@@ -49,20 +41,20 @@ class Recipe(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     title = db.Column(db.String, nullable=False)
     instructions = db.Column(db.String, nullable=False)
-    minutes_to_complete = db.Column(db.Integer, nullable=False)
-    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    minutes_to_complete = db.Column(db.Integer)
+    user_id = db.Column(db.Integer, db.ForeignKey("users.id"), nullable=False)
 
-    @validates('title')
-    def validate_title(self, key, title):
-        if not title or title.strip() == "":
+    @validates("title")
+    def validate_title(self, key, value):
+        if not value or value.strip() == "":
             raise ValueError("Title must be present.")
-        return title
+        return value
 
-    @validates('instructions')
-    def validate_instructions(self, key, instructions):
-        if not instructions or len(instructions.strip()) < 50:
-            raise ValueError("Instructions must be at least 50 characters long.")
-        return instructions
+    @validates("instructions")
+    def validate_instructions(self, key, value):
+        if not value or len(value.strip()) < 50:
+            raise ValueError("Instructions must be at least 50 characters.")
+        return value
 
     def __repr__(self):
         return f"<Recipe {self.title}>"
